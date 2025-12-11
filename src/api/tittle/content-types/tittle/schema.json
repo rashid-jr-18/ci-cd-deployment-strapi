@@ -1,0 +1,14 @@
+{
+  "kind": "collectionType",
+  "collectionName": "tittles",
+  "info": {
+    "singularName": "tittle",
+    "pluralName": "tittles",
+    "displayName": "tittle"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {}
+}
