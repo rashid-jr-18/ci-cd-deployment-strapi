@@ -3,7 +3,7 @@ name: CI - Build & Push Strapi Image
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
   build_and_push:
