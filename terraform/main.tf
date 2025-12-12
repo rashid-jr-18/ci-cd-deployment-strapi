@@ -109,7 +109,7 @@ resource "aws_instance" "strapi_server" {
   user_data = templatefile(
     "${path.module}/user_data_docker.sh",
     {
-      docker_image = var.docker_image
+      docker_image = "rashid18/strapi-ap:${var.image_tag}"
     }
   )
 
