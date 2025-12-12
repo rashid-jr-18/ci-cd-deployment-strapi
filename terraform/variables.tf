@@ -31,5 +31,11 @@ variable "ec2_ami" {
 variable "docker_image" {
   description = "Docker Image for Strapi"
   type        = string
-  default     = "rashid18/strapi-ap:latest"
+  default     = ""
+}
+
+variable "image_tag" {
+  description = "Docker image tag from GitHub Actions"
+  type        = string
+  default     = "latest"
 }

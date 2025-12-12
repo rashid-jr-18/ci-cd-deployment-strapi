@@ -18,6 +18,8 @@ docker run -d \
   -v postgres_data:/var/lib/postgresql/data \
   postgres:15
 
+docker pull ${docker_image} 
+
 docker run -d \
   --name strapi-app \
   --network strapi-network \
