@@ -3,9 +3,9 @@ name: CI - Build and Push Docker Image
 on:
   push:
     branches:
-      - main
+      - dev
     paths:
-      - "strapi/examples/getstarted/**"
+      - "**"   # run CI on any change (safe & simple)
 
 env:
   AWS_REGION: ap-south-1
@@ -30,7 +30,6 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image
-        working-directory: strapi/examples/getstarted
         run: |
           docker build -t rashid:latest .
 
