@@ -43,7 +43,7 @@ resource "aws_instance" "strapi_ec2" {
   key_name                    = "strapi-rashid"
   associate_public_ip_address = true
 
-  user_data = templatefile("${path.module}/user_data.sh", {
+  user_data = templatefile("${path.module}/user_data_docker.sh", {
     db_host     = data.aws_db_instance.strapi_db.address
     db_port     = data.aws_db_instance.strapi_db.port
     db_name     = data.aws_db_instance.strapi_db.db_name
@@ -52,6 +52,6 @@ resource "aws_instance" "strapi_ec2" {
   })
 
   tags = {
-    Name = "strapi-ec2"
+    Name = "strapi-ec2-razeeth"
   }
 }
