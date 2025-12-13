@@ -1,6 +1,5 @@
 terraform {
   required_version = ">= 1.3.0"
-
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -9,113 +8,50 @@ terraform {
   }
 }
 
-# -------------------------
-# Provider (Using IAM Profile)
-# -------------------------
 provider "aws" {
-  region  = var.aws_region
-  profile = var.aws_profile
+  region = "ap-south-1"
 }
 
-# -------------------------
-# 1. Use existing default VPC & Subnet
-# -------------------------
+# Default VPC
 data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet" "default" {
+data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
-
-  filter {
-    name   = "default-for-az"
-    values = ["true"]
-  }
-
-  filter {
-    name   = "availability-zone"
-    values = ["ap-south-1a"]
-  }
 }
 
-# -------------------------
-# 2. Security Group (SSH + Strapi + HTTP)
-# -------------------------
-resource "aws_security_group" "strapi_sg" {
-  name        = "strapi-rashid-group"   # <<< Updated Name
-  description = "Allow Strapi (1337), HTTP (80), SSH (22)"
-  vpc_id      = data.aws_vpc.default.id
-
-  # SSH
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Strapi (Port 1337)
-  ingress {
-    from_port   = 1337
-    to_port     = 1337
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Nginx / HTTP
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Outbound
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "strapi-security-group"
-  }
+# Existing RDS
+data "aws_db_instance" "strapi_db" {
+  db_instance_identifier = "database-razeeth"
 }
 
-# -------------------------
-# 3. EC2 Instance (Ubuntu + Docker + Strapi)
-# -------------------------
-resource "aws_instance" "strapi_server" {
+# EXISTING SECURITY GROUP (REUSED)
+data "aws_security_group" "existing_sg" {
+  name = "security-rashid-group"
+}
+
+# EC2 Instance
+resource "aws_instance" "strapi_ec2" {
   ami                         = var.ec2_ami
-  instance_type               = var.ec2_type
-
-  subnet_id                   = data.aws_subnet.default.id
-  vpc_security_group_ids      = [aws_security_group.strapi_sg.id]
-
-  key_name                    = var.key_name   # Existing AWS Key Pair Name
+  instance_type               = var.instance_type
+  subnet_id                   = data.aws_subnets.default.ids[0]
+  vpc_security_group_ids      = [data.aws_security_group.existing_sg.id]
+  key_name                    = "strapi-rashid"
   associate_public_ip_address = true
 
-  root_block_device {
-    volume_size           = 16
-    volume_type           = "gp2"
-    delete_on_termination = true
-    encrypted             = true
-  }
-
-  user_data = templatefile(
-    "${path.module}/user_data_docker.sh",
-    {
-      docker_image = "rashid18/strapi-ap:${var.image_tag}"
-    }
-  )
-
-  user_data_replace_on_change = true
+  user_data = templatefile("${path.module}/user_data.sh", {
+    db_host     = data.aws_db_instance.strapi_db.address
+    db_port     = data.aws_db_instance.strapi_db.port
+    db_name     = data.aws_db_instance.strapi_db.db_name
+    db_username = "postgresrazeeth"
+    db_password = "strapi1234"
+  })
 
   tags = {
-    Name = "rashid"
+    Name = "strapi-ec2"
   }
 }
