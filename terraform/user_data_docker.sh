@@ -1,39 +1,31 @@
 #!/bin/bash
 set -e
 
-apt update -y
-apt install -y docker.io
+dnf update -y
+dnf install -y docker unzip
 systemctl start docker
 systemctl enable docker
-usermod -aG docker ubuntu
+usermod -aG docker ec2-user
 
-docker network create strapi-network || true
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+unzip awscliv2.zip
+./aws/install
 
-docker run -d \
-  --name strapi-postgres \
-  --network strapi-network \
-  -e POSTGRES_DB=strapi \
-  -e POSTGRES_USER=strapi \
-  -e POSTGRES_PASSWORD=strapi123 \
-  -v postgres_data:/var/lib/postgresql/data \
-  postgres:15
+aws ecr get-login-password --region ap-south-1 \
+| docker login --username AWS --password-stdin 301782007642.dkr.ecr.ap-south-1.amazonaws.com
 
-docker pull ${docker_image} 
+docker pull 301782007642.dkr.ecr.ap-south-1.amazonaws.com/rashid:latest
+
+docker stop strapi-app || true
+docker rm strapi-app || true
 
 docker run -d \
   --name strapi-app \
-  --network strapi-network \
-  -e DATABASE_CLIENT=postgres \
-  -e DATABASE_NAME=strapi \
-  -e DATABASE_HOST=strapi-postgres \
-  -e DATABASE_PORT=5432 \
-  -e DATABASE_USERNAME=strapi \
-  -e DATABASE_PASSWORD=strapi123 \
   -p 1337:1337 \
-  ${docker_image}
-
-docker run -d \
-  --name strapi-nginx \
-  --network strapi-network \
-  -p 80:80 \
-  nginx:stable
+  -e DATABASE_CLIENT=postgres \
+  -e DATABASE_HOST=${db_host} \
+  -e DATABASE_PORT=${db_port} \
+  -e DATABASE_NAME=${db_name} \
+  -e DATABASE_USERNAME=${db_username} \
+  -e DATABASE_PASSWORD=${db_password} \
+  301782007642.dkr.ecr.ap-south-1.amazonaws.com/rashid:latest
